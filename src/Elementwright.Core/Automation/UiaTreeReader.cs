@@ -37,7 +37,7 @@ public sealed class UiaTreeReader
         var rect = info.BoundingRectangle;
         var safeRect = rect.IsEmpty || double.IsInfinity(rect.X)
             ? (X: 0d, Y: 0d, W: 0d, H: 0d)
-            : (rect.X, rect.Y, rect.Width, rect.Height);
+            : (X: rect.X, Y: rect.Y, W: rect.Width, H: rect.Height);
 
         var selector = BuildSelector(type, info.Name, info.AutomationId);
         var fullSelector = parentSelector is null ? selector : $"{parentSelector}/{selector}";
