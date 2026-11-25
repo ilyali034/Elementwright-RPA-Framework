@@ -213,7 +213,6 @@
                                       ItemsSource="{Binding FilteredApplications}"
                                       SelectedItem="{Binding SelectedApplication}"
                                       IsReadOnly="True"
-                                      SelectionChanged="ApplicationsGrid_SelectionChanged"
                                       Margin="0,1">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="WINDOW" Binding="{Binding WindowTitle}"
