@@ -54,7 +54,7 @@
                                        FontSize="15" Width="25" />
                             <TextBlock Text="Inspector" FontSize="12" FontWeight="SemiBold" />
                             <TextBlock Text="ACTIVE" FontSize="8" Foreground="#8DBBFF"
-                                       Margin="Auto" VerticalAlignment="Center" />
+                                       Margin="10,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
                     </Border>
                     <Border Padding="10,10">
@@ -236,7 +236,7 @@
                                             Style="{StaticResource PrimaryButton}"
                                             HorizontalAlignment="Right"
                                             VerticalAlignment="Center"
-                                            IsEnabled="{Binding SelectedApplication}" />
+                                            />
                                 </Grid>
                             </Border>
                         </Grid>
