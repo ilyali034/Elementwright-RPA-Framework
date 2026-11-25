@@ -1,7 +1,7 @@
 using System.Diagnostics;
-using Elementwright.Desktop.Models;
+using Elementwright.Core.Models;
 
-namespace Elementwright.Desktop.Services;
+namespace Elementwright.Core.Discovery;
 
 public sealed class WindowsApplicationDiscovery : IApplicationDiscovery
 {

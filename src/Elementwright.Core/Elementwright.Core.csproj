@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Elementwright.Core</RootNamespace>
+    <AssemblyName>Elementwright.Core</AssemblyName>
+    <PackageId>Elementwright.Core</PackageId>
+    <Version>0.1.0</Version>
+    <Description>Elementwright RPA framework core: window discovery and UI Automation.</Description>
+  </PropertyGroup>
+
+</Project>

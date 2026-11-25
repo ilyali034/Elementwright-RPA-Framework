@@ -1,4 +1,4 @@
-namespace Elementwright.Desktop.Models;
+namespace Elementwright.Core.Models;
 
 public sealed record ApplicationInfo(
     int ProcessId,
