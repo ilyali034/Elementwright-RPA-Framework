@@ -18,6 +18,7 @@ The framework contains no desktop UI. The WPF application is maintained in the s
 - Generate a readable selector for each inspected element.
 - Resolve structured selectors against a target window.
 - Execute supported UI Automation actions: Invoke, SetValue, Toggle and Select.
+- `UiaElementActions.InvokeAsync` does not hang when the click opens a modal dialog: it returns `false` after a timeout (default 2 s) instead of waiting for the dialog to close.
 - Bound tree traversal by depth and node count to avoid unbounded reads.
 
 ## Selector example

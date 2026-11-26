@@ -178,6 +178,59 @@ public sealed class UiaElementActions
         throw new NotSupportedException("This element does not expose the UI Automation Invoke pattern.");
     }
 
+    /// <summary>
+    /// Invokes the element without blocking on modal dialogs. UI Automation's <c>Invoke</c> may not return until a
+    /// dialog opened by the click is closed, so the call runs on its own thread and is awaited for at most
+    /// <paramref name="timeout"/> (default 2 seconds).
+    /// </summary>
+    /// <returns><c>true</c> if Invoke completed; <c>false</c> if it was still running when the timeout elapsed
+    /// (the target is most likely showing a modal dialog).</returns>
+    public async Task<bool> InvokeAsync(
+        AutomationElement element,
+        TimeSpan? timeout = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(element);
+        if (!element.Current.IsEnabled)
+            throw new InvalidOperationException("The selected element is disabled.");
+
+        if (!element.TryGetCurrentPattern(InvokePattern.Pattern, out var pattern) ||
+            pattern is not InvokePattern invoke)
+            throw new NotSupportedException("This element does not expose the UI Automation Invoke pattern.");
+
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var worker = new Thread(() =>
+        {
+            try
+            {
+                invoke.Invoke();
+                completion.TrySetResult();
+            }
+            catch (Exception ex)
+            {
+                completion.TrySetException(ex);
+            }
+        })
+        {
+            IsBackground = true,
+            Name = "Elementwright.UiaInvoke"
+        };
+        worker.Start();
+
+        var effectiveTimeout = timeout ?? TimeSpan.FromSeconds(2);
+        var finished = await Task.WhenAny(completion.Task, Task.Delay(effectiveTimeout, cancellationToken))
+            .ConfigureAwait(false);
+
+        if (finished == completion.Task)
+        {
+            await completion.Task.ConfigureAwait(false); // rethrow Invoke failures
+            return true;
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        return false;
+    }
+
     public void SetValue(AutomationElement element, string value)
     {
         ArgumentNullException.ThrowIfNull(element);
