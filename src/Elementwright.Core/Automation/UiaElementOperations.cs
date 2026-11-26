@@ -122,4 +122,32 @@ public sealed class UiaElementActions
 
         throw new NotSupportedException("This element does not expose the UI Automation Value pattern.");
     }
+
+    public void Toggle(AutomationElement element)
+    {
+        ArgumentNullException.ThrowIfNull(element);
+        if (!element.Current.IsEnabled)
+            throw new InvalidOperationException("The selected element is disabled.");
+        if (element.TryGetCurrentPattern(TogglePattern.Pattern, out var pattern) &&
+            pattern is TogglePattern toggle)
+        {
+            toggle.Toggle();
+            return;
+        }
+        throw new NotSupportedException("This element does not expose the UI Automation Toggle pattern.");
+    }
+
+    public void Select(AutomationElement element)
+    {
+        ArgumentNullException.ThrowIfNull(element);
+        if (!element.Current.IsEnabled)
+            throw new InvalidOperationException("The selected element is disabled.");
+        if (element.TryGetCurrentPattern(SelectionItemPattern.Pattern, out var pattern) &&
+            pattern is SelectionItemPattern selection)
+        {
+            selection.Select();
+            return;
+        }
+        throw new NotSupportedException("This element does not expose the UI Automation SelectionItem pattern.");
+    }
 }
