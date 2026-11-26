@@ -14,7 +14,7 @@ The framework contains no desktop UI. The WPF application is maintained in the s
 
 - Discover top-level windows belonging to running processes.
 - Read the Windows UI Automation **Control View** tree.
-- Capture element name, AutomationId, class, control type, enabled/offscreen/focusable state, bounds, help text, current Value and supported UIA patterns.
+- Capture element name, AutomationId, class, control type, enabled/offscreen/focusable state, bounds, help text, current Value and supported UIA patterns. The Value of password fields is never read (`ElementNode.IsPassword`).
 - Generate a readable selector for each inspected element.
 - Resolve structured selectors against a target window.
 - Execute supported UI Automation actions: Invoke, SetValue, Toggle and Select.

@@ -57,6 +57,7 @@ public sealed class UiaTreeReader
             ? (X: 0d, Y: 0d, W: 0d, H: 0d)
             : (X: rect.X, Y: rect.Y, W: rect.Width, H: rect.Height);
 
+        var isPassword = Safe(() => info.IsPassword, false);
         var selector = BuildSelector(type, name, automationId, className);
         var fullSelector = parentSelector is null ? selector : $"{parentSelector}/{selector}";
 
@@ -74,7 +75,9 @@ public sealed class UiaTreeReader
             HasTogglePattern = HasPattern(element, TogglePattern.Pattern),
             HasSelectionItemPattern = HasPattern(element, SelectionItemPattern.Pattern),
             HelpText = Safe(() => info.HelpText, string.Empty),
-            Value = ReadValue(element),
+            // Never read the value of password fields: it must not reach logs, UI or the clipboard.
+            IsPassword = isPassword,
+            Value = isPassword ? string.Empty : ReadValue(element),
             X = safeRect.X,
             Y = safeRect.Y,
             Width = safeRect.W,

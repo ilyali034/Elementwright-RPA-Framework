@@ -15,6 +15,9 @@ public sealed class ElementNode
     public required bool HasSelectionItemPattern { get; init; }
     public required string HelpText { get; init; }
     public required string Value { get; init; }
+
+    /// <summary>True for password fields. Their <see cref="Value"/> is never read.</summary>
+    public required bool IsPassword { get; init; }
     public required double X { get; init; }
     public required double Y { get; init; }
     public required double Width { get; init; }
