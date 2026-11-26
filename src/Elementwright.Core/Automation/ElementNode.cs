@@ -21,6 +21,9 @@ public sealed class ElementNode
     public required double Height { get; init; }
     public required string Selector { get; init; }
 
+    /// <summary>Child indexes from the window root in the Control View, e.g. <c>2/0/5</c>. Empty for the root.</summary>
+    public required string Path { get; init; }
+
     public List<ElementNode> Children { get; } = [];
 
     public string DisplayName

@@ -8,6 +8,11 @@ public sealed record ElementSelector
     public string? ClassName { get; init; }
     public string? ControlType { get; init; }
 
+    /// <summary>
+    /// Tree path used only as a tie-breaker when several elements match the other properties.
+    /// </summary>
+    public string? Path { get; init; }
+
     public static ElementSelector FromNode(ElementNode node)
     {
         ArgumentNullException.ThrowIfNull(node);
@@ -15,13 +20,15 @@ public sealed record ElementSelector
             ? new ElementSelector
             {
                 AutomationId = node.AutomationId,
-                ControlType = NullIfEmpty(node.ControlType)
+                ControlType = NullIfEmpty(node.ControlType),
+                Path = node.Path
             }
             : new ElementSelector
             {
                 Name = NullIfEmpty(node.Name),
                 ClassName = NullIfEmpty(node.ClassName),
-                ControlType = NullIfEmpty(node.ControlType)
+                ControlType = NullIfEmpty(node.ControlType),
+                Path = node.Path
             };
     }
 

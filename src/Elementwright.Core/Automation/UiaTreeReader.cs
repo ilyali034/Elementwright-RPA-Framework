@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Automation;
 
@@ -28,13 +29,14 @@ public sealed class UiaTreeReader
                 ?? throw new InvalidOperationException("Windows UI Automation could not access this window.");
 
             var budget = maxNodes;
-            return Build(root, null, 0, maxDepth, ref budget, cancellationToken);
+            return Build(root, null, string.Empty, 0, maxDepth, ref budget, cancellationToken);
         }, cancellationToken);
     }
 
     private static ElementNode Build(
         AutomationElement element,
         string? parentSelector,
+        string path,
         int depth,
         int maxDepth,
         ref int budget,
@@ -77,7 +79,8 @@ public sealed class UiaTreeReader
             Y = safeRect.Y,
             Width = safeRect.W,
             Height = safeRect.H,
-            Selector = fullSelector
+            Selector = fullSelector,
+            Path = path
         };
 
         if (depth >= maxDepth || budget <= 0)
@@ -87,13 +90,18 @@ public sealed class UiaTreeReader
         try { child = TreeWalker.ControlViewWalker.GetFirstChild(element); }
         catch (ElementNotAvailableException) { return node; }
 
+        var childIndex = 0;
         while (child is not null && budget > 0)
         {
             ct.ThrowIfCancellationRequested();
             AutomationElement? next;
             try
             {
-                node.Children.Add(Build(child, fullSelector, depth + 1, maxDepth, ref budget, ct));
+                var childPath = path.Length == 0
+                    ? childIndex.ToString(CultureInfo.InvariantCulture)
+                    : $"{path}/{childIndex.ToString(CultureInfo.InvariantCulture)}";
+                node.Children.Add(Build(child, fullSelector, childPath, depth + 1, maxDepth, ref budget, ct));
+                childIndex++;
                 next = TreeWalker.ControlViewWalker.GetNextSibling(child);
             }
             catch (ElementNotAvailableException)

@@ -1,9 +1,30 @@
+using System.Globalization;
 using System.Windows.Automation;
 
 namespace Elementwright.Core.Automation;
 
+/// <summary>An element found by a selector together with its position in the Control View tree.</summary>
+public sealed record UiaMatch(AutomationElement Element, string Path);
+
+/// <summary>Thrown when a selector matches several elements and cannot be narrowed down safely.</summary>
+public sealed class AmbiguousSelectorException : InvalidOperationException
+{
+    public AmbiguousSelectorException(int matchCount)
+        : base($"The selector matches {matchCount} elements and cannot be resolved to a single one. Refresh the tree and re-capture the selector.")
+    {
+        MatchCount = matchCount;
+    }
+
+    public int MatchCount { get; }
+}
+
 public sealed class UiaElementFinder
 {
+    private const int MaxDepth = 32;
+    private const int MaxVisited = 10000;
+    private const int MaxChildren = 2000;
+
+    /// <summary>Returns the first element (pre-order) that matches the selector properties. Ignores <see cref="ElementSelector.Path"/>.</summary>
     public Task<AutomationElement?> FindFirstAsync(
         nint windowHandle,
         ElementSelector selector,
@@ -18,6 +39,51 @@ public sealed class UiaElementFinder
         ElementSelector selector,
         CancellationToken cancellationToken = default)
     {
+        var matches = Search(windowHandle, selector, stopAfterFirst: true, cancellationToken);
+        return matches.Count == 0 ? null : matches[0].Element;
+    }
+
+    /// <summary>
+    /// Resolves the selector to exactly one element. Several matches are narrowed down by
+    /// <see cref="ElementSelector.Path"/>; if that is not possible an <see cref="AmbiguousSelectorException"/> is thrown
+    /// instead of silently picking the first match. Returns <c>null</c> when nothing matches.
+    /// </summary>
+    public Task<UiaMatch?> ResolveAsync(
+        nint windowHandle,
+        ElementSelector selector,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(selector);
+        return Task.Run(() => Resolve(windowHandle, selector, cancellationToken), cancellationToken);
+    }
+
+    public UiaMatch? Resolve(
+        nint windowHandle,
+        ElementSelector selector,
+        CancellationToken cancellationToken = default)
+    {
+        var matches = Search(windowHandle, selector, stopAfterFirst: false, cancellationToken);
+        if (matches.Count == 0)
+            return null;
+        if (matches.Count == 1)
+            return matches[0];
+
+        if (selector.Path is not null)
+        {
+            var exact = matches.FirstOrDefault(m => string.Equals(m.Path, selector.Path, StringComparison.Ordinal));
+            if (exact is not null)
+                return exact;
+        }
+
+        throw new AmbiguousSelectorException(matches.Count);
+    }
+
+    private static List<UiaMatch> Search(
+        nint windowHandle,
+        ElementSelector selector,
+        bool stopAfterFirst,
+        CancellationToken cancellationToken)
+    {
         ArgumentNullException.ThrowIfNull(selector);
         if (windowHandle == nint.Zero)
             throw new ArgumentException("A valid window handle is required.", nameof(windowHandle));
@@ -25,45 +91,53 @@ public sealed class UiaElementFinder
             selector.ClassName is null && selector.ControlType is null)
             throw new ArgumentException("At least one selector property must be specified.", nameof(selector));
 
+        var matches = new List<UiaMatch>();
         var root = AutomationElement.FromHandle(windowHandle);
         if (root is null)
-            return null;
+            return matches;
 
         var walker = TreeWalker.ControlViewWalker;
-        var stack = new Stack<(AutomationElement Element, int Depth)>();
-        stack.Push((root, 0));
+        var stack = new Stack<(AutomationElement Element, int Depth, string Path)>();
+        stack.Push((root, 0, string.Empty));
         var visited = 0;
 
-        while (stack.Count > 0 && visited < 10000)
+        while (stack.Count > 0 && visited < MaxVisited)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var (element, depth) = stack.Pop();
+            var (element, depth, path) = stack.Pop();
             visited++;
 
             try
             {
                 if (Matches(element, selector))
-                    return element;
+                {
+                    matches.Add(new UiaMatch(element, path));
+                    if (stopAfterFirst)
+                        return matches;
+                }
 
-                if (depth >= 32)
+                if (depth >= MaxDepth)
                     continue;
 
                 var children = new List<AutomationElement>();
                 var child = walker.GetFirstChild(element);
-                while (child is not null && children.Count < 2000)
+                while (child is not null && children.Count < MaxChildren)
                 {
                     children.Add(child);
                     child = walker.GetNextSibling(child);
                 }
 
                 for (var i = children.Count - 1; i >= 0; i--)
-                    stack.Push((children[i], depth + 1));
+                {
+                    var index = i.ToString(CultureInfo.InvariantCulture);
+                    stack.Push((children[i], depth + 1, path.Length == 0 ? index : $"{path}/{index}"));
+                }
             }
             catch (ElementNotAvailableException) { }
             catch (InvalidOperationException) { }
         }
 
-        return null;
+        return matches;
     }
 
     private static bool Matches(AutomationElement element, ElementSelector selector)

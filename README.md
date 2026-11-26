@@ -25,13 +25,15 @@ The framework contains no desktop UI. The WPF application is maintained in the s
 ```csharp
 var selector = ElementSelector.FromNode(elementNode);
 var finder = new UiaElementFinder();
-var element = await finder.FindFirstAsync(windowHandle, selector);
+var match = await finder.ResolveAsync(windowHandle, selector);
 
-if (element is not null)
+if (match is not null)
 {
-    new UiaElementActions().Invoke(element);
+    new UiaElementActions().Invoke(match.Element);
 }
 ```
+
+`ResolveAsync` returns exactly one element. If several elements match the selector properties, they are narrowed down by the selector's `Path` (the element's position in the Control View tree). If that is not possible, `AmbiguousSelectorException` is thrown instead of picking the first match. `FindFirstAsync` keeps the old "first match" behaviour and ignores `Path`.
 
 Selectors prefer `AutomationId` when available and also constrain by control type. When no AutomationId is present, the selector falls back to Name, ClassName and ControlType. These properties are provider-dependent; dynamic applications may expose incomplete or changing UI Automation metadata.
 
@@ -41,7 +43,7 @@ Selectors prefer `AutomationId` when available and also constrain by control typ
 - Actions work only when the target exposes the corresponding UI Automation pattern.
 - Some applications (including some Java, legacy, elevated, custom-rendered or remote-desktop apps) may expose incomplete UI Automation trees. Run Studio at an appropriate integrity level when inspecting elevated targets.
 - The reader uses the Control View, so raw layout-only elements from the Raw View are intentionally omitted.
-- Selector resolution currently returns the first matching element; uniqueness scoring and ancestor-relative selectors are planned.
+- `Path` is a positional tie-breaker and breaks when siblings are added or removed; ancestor-relative selectors are planned.
 
 ## Development
 
