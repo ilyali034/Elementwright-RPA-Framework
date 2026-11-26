@@ -47,6 +47,48 @@ var parsed = ElementSelector.Parse(json); // or ElementSelector.TryParse(json, o
 
 Selectors prefer `AutomationId` when available and also constrain by control type. When no AutomationId is present, the selector falls back to Name, ClassName and ControlType. These properties are provider-dependent; dynamic applications may expose incomplete or changing UI Automation metadata.
 
+## Workflows
+
+A `Workflow` is an ordered list of steps stored as JSON. Studio's Workflow Designer edits it; the Runner executes it.
+
+| Action | Needs | What it does |
+|---|---|---|
+| `invoke` | selector | UIA Invoke (buttons, menu items) |
+| `setValue` | selector, value | UIA Value (editable fields) |
+| `toggle` | selector | UIA Toggle (check boxes) |
+| `select` | selector | UIA SelectionItem (list items, tabs) |
+| `waitForElement` | selector, `timeoutMs` | waits until the element appears |
+| `delay` | `delayMs` | pauses the workflow |
+
+```json
+{
+  "schemaVersion": 1,
+  "name": "Type into Notepad",
+  "target": { "processName": "notepad" },
+  "steps": [
+    {
+      "id": "3f1c0a9e",
+      "name": "Type text",
+      "action": "setValue",
+      "selector": { "controlType": "Edit", "className": "RichEditD2DPT", "path": "1/0" },
+      "value": "Hello from Elementwright",
+      "timeoutMs": 10000
+    },
+    { "id": "a77b21d4", "action": "delay", "delayMs": 500 }
+  ]
+}
+```
+
+```csharp
+var workflow = await WorkflowSerializer.LoadAsync("notepad.workflow.json");
+
+var issues = WorkflowValidator.Validate(workflow);
+if (issues.Count > 0)
+    throw new InvalidOperationException(string.Join(Environment.NewLine, issues));
+```
+
+`WorkflowSerializer.Parse` checks the JSON structure (missing `action`, unknown action names). `WorkflowValidator.Validate` checks that the workflow can run (selectors present, `setValue` has a value, sane timeouts, unique step ids).
+
 ## Limitations
 
 - Requires Windows and a desktop session; this is not a cross-platform UI automation library.
