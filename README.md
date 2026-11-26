@@ -36,6 +36,15 @@ if (match is not null)
 
 `ResolveAsync` returns exactly one element. If several elements match the selector properties, they are narrowed down by the selector's `Path` (the element's position in the Control View tree). If that is not possible, `AmbiguousSelectorException` is thrown instead of picking the first match. `FindFirstAsync` keeps the old "first match" behaviour and ignores `Path`.
 
+Selectors serialize to JSON, which is what Studio copies and what workflows should store:
+
+```csharp
+string json = selector.ToJson();
+// {"automationId":"btnOk","controlType":"Button","path":"2/1"}
+
+var parsed = ElementSelector.Parse(json); // or ElementSelector.TryParse(json, out var s)
+```
+
 Selectors prefer `AutomationId` when available and also constrain by control type. When no AutomationId is present, the selector falls back to Name, ClassName and ControlType. These properties are provider-dependent; dynamic applications may expose incomplete or changing UI Automation metadata.
 
 ## Limitations
