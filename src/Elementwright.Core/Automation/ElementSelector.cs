@@ -8,13 +8,22 @@ public sealed record ElementSelector
     public string? ClassName { get; init; }
     public string? ControlType { get; init; }
 
-    public static ElementSelector FromNode(ElementNode node) => new()
+    public static ElementSelector FromNode(ElementNode node)
     {
-        AutomationId = NullIfEmpty(node.AutomationId),
-        Name = NullIfEmpty(node.Name),
-        ClassName = NullIfEmpty(node.ClassName),
-        ControlType = NullIfEmpty(node.ControlType)
-    };
+        ArgumentNullException.ThrowIfNull(node);
+        return !string.IsNullOrWhiteSpace(node.AutomationId)
+            ? new ElementSelector
+            {
+                AutomationId = node.AutomationId,
+                ControlType = NullIfEmpty(node.ControlType)
+            }
+            : new ElementSelector
+            {
+                Name = NullIfEmpty(node.Name),
+                ClassName = NullIfEmpty(node.ClassName),
+                ControlType = NullIfEmpty(node.ControlType)
+            };
+    }
 
     private static string? NullIfEmpty(string value) =>
         string.IsNullOrWhiteSpace(value) ? null : value;
